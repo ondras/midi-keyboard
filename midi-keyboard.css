@@ -1,0 +1,42 @@
+:host {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+:host([layout=tonnetz]) {
+	font-size: 18px;
+
+	svg {
+		width: 100%;
+		height: 100%;
+	}
+
+	text {
+		text-anchor: middle;
+		dominant-baseline: central;
+	}
+
+	.note {
+		circle {
+			r: 20px;
+			stroke: #000;
+			fill: #fff;
+		}
+
+		&:hover circle { fill: #eee; }
+	}
+
+	.chord {
+		path {
+			stroke: #000;
+			fill: #fff;
+		}
+
+		&:hover path { fill: #eee; }
+	}
+
+	.active :is(path, circle) {
+		stroke-width: 2px;
+	}
+}

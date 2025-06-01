@@ -1,0 +1,8 @@
+{
+	"name": "@ondras/midi-keyboard",
+	"version": "1.0.0",
+	"exports": "./src/midi-keyboard.ts",
+	"compilerOptions": {
+		"lib": ["dom", "deno.ns"]
+	}
+}
