@@ -50,6 +50,7 @@ export default class MidiKeyboard extends HTMLElement {
 				node.addEventListener("pointerup", abort, {signal})
 				node.addEventListener("pointerleave", abort, {signal})
 				this.processEvent(node, "on");
+				node.parentNode!.append(node);
 			break;
 		}
 	}

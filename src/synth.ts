@@ -1,6 +1,14 @@
 import * as midi from "./midi.ts";
 
 
+interface AudioNodes {
+	oscillator: OscillatorNode;
+	gain: GainNode;
+}
+
+const ATTACK = 0.05;
+const RELEASE = 0.05;
+
 export default class Synth extends EventTarget implements MIDIOutput {
 	readonly id = "synth";
 	readonly manufacturer = "ondras";
@@ -12,10 +20,22 @@ export default class Synth extends EventTarget implements MIDIOutput {
 	onstatechange = null;
 
 	protected ctx = new AudioContext();
-	protected playing = new Map<number, OscillatorNode>();
+	protected playing = new Map<number, AudioNodes>();
+	protected output: AudioNode;
 
 	async open() { return this; }
 	async close() { return this; }
+
+	constructor() {
+		super();
+
+		const { ctx } = this;
+
+		let compressor = ctx.createDynamicsCompressor();
+		compressor.connect(ctx.destination);
+//		this.output = ctx.destination;
+		this.output = compressor;
+	}
 
 	send(data: number[], timestamp?: DOMHighResTimeStamp) {
 		let [status, note, velocity] = data;
@@ -26,24 +46,47 @@ export default class Synth extends EventTarget implements MIDIOutput {
 	}
 
 	protected noteOn(note: number) {
-		const { playing, ctx } = this;
+		const { playing, ctx, output } = this;
 		if (playing.has(note)) { return; }
 
-		let oscillator = ctx.createOscillator();
-		oscillator.frequency.value = midi.noteNumberToFrequency(note);
-		oscillator.connect(ctx.destination);
-		oscillator.start();
+		let audioNodes = createOscillator(ctx, midi.noteNumberToFrequency(note));
+		audioNodes.gain.connect(output);
 
-		playing.set(note, oscillator);
+		playing.set(note, audioNodes);
 	}
 
 	protected noteOff(note: number) {
 		const { playing } = this;
 
-		let oscillator = playing.get(note);
-		if (!oscillator) { return; }
+		let audioNodes = playing.get(note);
+		if (!audioNodes) { return; }
 
-		oscillator.stop();
+		destroyOscillator(audioNodes);
 		playing.delete(note);
 	}
+}
+
+function createOscillator(ctx: AudioContext, frequency: number): AudioNodes {
+	let oscillator = ctx.createOscillator();
+	let gain = ctx.createGain();
+
+
+	gain.gain.setValueAtTime(0, ctx.currentTime);
+	gain.gain.linearRampToValueAtTime(1, ctx.currentTime + ATTACK);
+
+	oscillator.frequency.value = frequency;
+	oscillator.connect(gain);
+	oscillator.start();
+
+	return { oscillator, gain };
+}
+
+function destroyOscillator(audioNodes: AudioNodes) {
+	const { oscillator, gain } = audioNodes;
+
+	const { currentTime } = gain.context;
+	gain.gain.setValueAtTime(1, currentTime);
+	gain.gain.linearRampToValueAtTime(0, currentTime + RELEASE);
+
+	oscillator.stop(currentTime + RELEASE);
 }
