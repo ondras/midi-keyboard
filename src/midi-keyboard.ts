@@ -5,7 +5,9 @@ import * as tonnetz from "./layout/tonnetz.ts";
 
 export default class MidiKeyboard extends HTMLElement {
 	protected outputs: MIDIOutput[] = [new Synth()];
-	protected activeNotes = new Set<number>();
+
+	// active notes, can be held multiple times
+	protected activeNotes = new Map<number, number>();
 
 	get shadowRoot() { return super.shadowRoot!; }
 	get layout() { return this.getAttribute("layout"); }
@@ -16,7 +18,6 @@ export default class MidiKeyboard extends HTMLElement {
 
 		const { shadowRoot } = this;
 		shadowRoot.addEventListener("pointerdown", this);
-		shadowRoot.addEventListener("pointerup", this);
 	}
 
 	async connectedCallback() {
@@ -35,40 +36,59 @@ export default class MidiKeyboard extends HTMLElement {
 	}
 
 	handleEvent(e: PointerEvent) {
+		let node = (e.target as HTMLElement).closest<HTMLElement>("[data-notes]");
+		if (!node) { return; }
+
 		switch (e.type) {
 			case "pointerdown":
-			case "pointerup":
-				let node = (e.target as HTMLElement).closest<HTMLElement>("[data-notes]");
-				if (!node) { return; }
-
-//				node.setPointerCapture(e.pointerId);
-
-				this.processEvent(node, e.type);
+				let ac = new AbortController();
+				let { signal } = ac;
+				let abort = () => {
+					ac.abort();
+					this.processEvent(node, "off");
+				}
+				node.addEventListener("pointerup", abort, {signal})
+				node.addEventListener("pointerleave", abort, {signal})
+				this.processEvent(node, "on");
 			break;
 		}
 	}
 
-	protected processEvent(node: HTMLElement | SVGElement, type: "pointerdown" | "pointerup") {
-		console.log(node, type);
-		const { outputs } = this;
-		let notes = node.dataset.notes!.split(",").map(Number);
+	protected processEvent(node: HTMLElement | SVGElement, type: "on" | "off") {
+		const { outputs, activeNotes } = this;
+		let nodeNotes = parseNotes(node);
 
 		let channel = 0;
-		let status = (type == "pointerdown" ? midi.NOTE_ON : midi.NOTE_OFF) + channel;
+		let changedNotes: number[] = [];
 
-		notes.forEach(note => {
-			let midiMessage = [status, note, 100];
-			outputs.forEach(output => output.send(midiMessage));
-			this.applyMidiMessage(midiMessage);
+		nodeNotes.forEach(note => {
+			let playingCount = activeNotes.get(note) || 0;
+			playingCount += (type == "on" ? 1 : -1);
+
+			if (playingCount == 0) { // stopped
+				activeNotes.delete(note);
+				changedNotes.push(note);
+				let midiMessage = [midi.NOTE_OFF+channel, note, 100];
+				outputs.forEach(output => output.send(midiMessage));
+			} else {
+				activeNotes.set(note, playingCount);
+				if (playingCount == 1) { // started
+					changedNotes.push(note);
+					let midiMessage = [midi.NOTE_ON+channel, note, 100];
+					outputs.forEach(output => output.send(midiMessage));
+				}
+			}
 		});
+
+		changedNotes.forEach(note => this.syncActive(note));
 	}
 
-	protected applyMidiMessage(data: number[]) {
+	protected onMidiMessage(data: number[]) {
 		const { activeNotes } = this;
 
 		let [status, note, velocity] = data;
 		switch (status & 0xF0) {
-			case midi.NOTE_ON: velocity ? activeNotes.add(note) : activeNotes.delete(note); break;
+			case midi.NOTE_ON: velocity ? activeNotes.set(note, 1) : activeNotes.delete(note); break;
 			case midi.NOTE_OFF: activeNotes.delete(note); break;
 		}
 
@@ -79,7 +99,7 @@ export default class MidiKeyboard extends HTMLElement {
 		const { activeNotes, shadowRoot } = this;
 
 		[...shadowRoot.querySelectorAll<HTMLElement>(`[data-notes*="${note}"]`)].forEach(node => {
-			let notes = node.dataset.notes!.split(",").map(Number);
+			let notes = parseNotes(node);
 			let isActive = notes.every(note => activeNotes.has(note));
 			node.classList.toggle("active", isActive);
 		});
@@ -91,4 +111,8 @@ function linkLoaded(link: Element) {
 	let { resolve, promise } = Promise.withResolvers();
 	link.addEventListener("load", resolve);
 	return promise;
+}
+
+function parseNotes(node: HTMLElement | SVGElement) {
+	return node.dataset.notes!.split(",").map(Number);
 }
