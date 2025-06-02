@@ -25,13 +25,12 @@ export function create(size: number[], options: Partial<Options>) {
 	let rowsHalf = Math.ceil((crossSize/2) / rowHeight);
 	let notesHalf = Math.ceil((mainSize/2) / resolvedOptions.edge);
 
-	for (let y = -rowsHalf; y <= rowsHalf; y++) {
+	for (let y of fromto(rowsHalf)) {
 		let isOddRow = Math.abs(y % 2);
-
 		let rowCenterNote = resolvedOptions.center - y * resolvedOptions.topRightStep;
 		rowCenterNote += Math.ceil(y/2) * resolvedOptions.mainStep;
 
-		for (let x = -notesHalf; x <= notesHalf; x++) {
+		for (let x of fromto(notesHalf)) {
 			let note = rowCenterNote + x * resolvedOptions.mainStep;
 			if (note < midi.NOTE_MIN || note > midi.NOTE_MAX) { continue; }
 
@@ -40,21 +39,10 @@ export function create(size: number[], options: Partial<Options>) {
 
 			[mainPosition, crossPosition] = [Math.round(mainPosition), Math.round(crossPosition)+0.5];
 
-//			item.style.position = "absolute";
-//			item.style.left = `${mainPosition}px`;
-//			item.style.top = `${crossPosition}px`;
-
-			let g = svg("g");
-			g.classList.add("note");
-			g.setAttribute("transform", `translate(${mainPosition} ${crossPosition})`);
-			g.dataset.notes = [note].join(",");
-
-			let circle = svg("circle");
-			let text = svg("text");
-			text.textContent = midi.noteNumberToLabel(note);
-
-			g.append(circle, text);
-			noteGroup.append(g);
+			let noteDom = createNote(midi.noteNumberToLabel(note));
+			noteDom.node.setAttribute("transform", `translate(${mainPosition} ${crossPosition})`);
+			noteDom.dataset.notes = [note].join(",");
+			noteGroup.append(noteDom.node);
 
 			if (x < notesHalf) {
 				let label = midi.noteNumberToLabel(note);
@@ -80,11 +68,22 @@ export function create(size: number[], options: Partial<Options>) {
 				}
 			}
 		}
-
 	}
 
 	return node;
+}
 
+function createNote(name: string) {
+	let g = svg("g");
+	g.classList.add("note");
+
+	let circle = svg("circle");
+	let text = svg("text");
+	text.textContent = name;
+
+	g.append(circle, text);
+
+	return { node: g, dataset: g.dataset, text };
 }
 
 function createChord(name: string) {
@@ -108,3 +107,9 @@ function createChord(name: string) {
 function svg<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTagNameMap[K] {
 	return document.createElementNS("http://www.w3.org/2000/svg", name);
 }
+
+function* range(begin: number, end: number, step=1) {
+	for (let i=begin; i<end; i+=step) { yield i; }
+}
+
+function fromto(amount: number) { return range(-amount, amount+1); }
