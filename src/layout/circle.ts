@@ -13,7 +13,9 @@ export type Options = typeof DEFAULT_OPTIONS;
 type ChordType = "major" | "minor";
 
 export function create(size: number[], options: Partial<Options>) {
-	let resolvedOptions = { ...DEFAULT_OPTIONS, ...options };
+	const resolvedOptions = { ...DEFAULT_OPTIONS, ...options };
+	const { edge } = resolvedOptions;
+
 	let fragment = document.createDocumentFragment();
 
 	let minSize = Math.min(...size);
@@ -27,13 +29,13 @@ export function create(size: number[], options: Partial<Options>) {
 
 		let note = resolvedOptions.center + i*resolvedOptions.step % 12;
 		let noteNode = createNote(note);
-		noteNode.setAttribute("transform", `translate(${cx}, ${cy-resolvedOptions.edge/2})`);
+		noteNode.setAttribute("transform", `translate(${cx}, ${cy-edge/2})`);
 
 		let chordMajor = createChord(note, "major", resolvedOptions);
-		chordMajor.setAttribute("transform", `translate(${cx-resolvedOptions.edge/3}, ${cy+resolvedOptions.edge/3})`);
+		chordMajor.setAttribute("transform", `translate(${cx-edge/3}, ${cy+edge/3})`);
 
 		let chordMinor = createChord(note, "minor", resolvedOptions);
-		chordMinor.setAttribute("transform", `translate(${cx+resolvedOptions.edge/3}, ${cy+resolvedOptions.edge/3})`);
+		chordMinor.setAttribute("transform", `translate(${cx+edge/3}, ${cy+edge/3})`);
 
 		fragment.append(noteNode, chordMajor, chordMinor);
 	}
@@ -56,7 +58,8 @@ function createNote(note: number) {
 }
 
 function createChord(rootNote: number, type: ChordType, resolvedOptions: Options) {
-	const height = Math.sqrt(3)/2 * resolvedOptions.edge;
+	const { edge } = resolvedOptions;
+	const height = Math.sqrt(3)/2 * edge;
 
 	let g = svg("g");
 	g.classList.add("chord");
@@ -79,8 +82,8 @@ function createChord(rootNote: number, type: ChordType, resolvedOptions: Options
 		break;
 	}
 
-	path.setAttribute("d", `M ${-resolvedOptions.edge/2} ${yDirection*height/2} h ${resolvedOptions.edge} l ${-resolvedOptions.edge/2} ${-yDirection*height} Z`);
-	text.setAttribute("y", `${yDirection * height / 6}`);
+	path.setAttribute("d", `M ${-edge/2} ${yDirection*height/2} h ${edge} l ${-edge/2} ${-yDirection*height} Z`);
+	text.setAttribute("y", `${yDirection*height/6}`);
 
 	g.append(path, text);
 	return g;

@@ -95,7 +95,8 @@ function createNote(note: number) {
 }
 
 function createChord(rootNote: number, type: ChordType, resolvedOptions: Options) {
-	const stripeHeight = Math.sqrt(3)/2 * resolvedOptions.edge;
+	const { edge } = resolvedOptions;
+	const stripeHeight = Math.sqrt(3)/2 * edge;
 
 	let g = svg("g");
 	g.classList.add("chord");
@@ -120,14 +121,14 @@ function createChord(rootNote: number, type: ChordType, resolvedOptions: Options
 
 	switch (resolvedOptions.mainAxis) {
 		case "horizontal":
-			path.setAttribute("d", `M 0 0 h ${resolvedOptions.edge} l ${-resolvedOptions.edge/2} ${midpointFactor*stripeHeight} Z`);
-			text.setAttribute("x", `${resolvedOptions.edge/2}`);
+			path.setAttribute("d", `M 0 0 h ${edge} l ${-edge/2} ${midpointFactor*stripeHeight} Z`);
+			text.setAttribute("x", `${edge/2}`);
 			text.setAttribute("y", `${midpointFactor*stripeHeight/3}`);
 		break;
 		case "vertical":
-			path.setAttribute("d", `M 0 0 v ${-resolvedOptions.edge} l ${midpointFactor*stripeHeight} ${resolvedOptions.edge/2} Z`);
+			path.setAttribute("d", `M 0 0 v ${-edge} l ${midpointFactor*stripeHeight} ${edge/2} Z`);
 			text.setAttribute("x", `${midpointFactor*stripeHeight/3}`);
-			text.setAttribute("y", `${-resolvedOptions.edge/2}`);
+			text.setAttribute("y", `${-edge/2}`);
 		break;
 	}
 
