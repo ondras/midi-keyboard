@@ -1,70 +1,67 @@
 import * as midi from "../midi.ts";
 
 
+type MainAxisType = "horizontal" | "vertical";
+type ChordType = "major" | "minor";
 export const DEFAULT_OPTIONS = {
 	center: 60,
 	edge: 100,
-	mainStep: 7,
-	topRightStep: 3
+	mainAxis: "horizontal" as MainAxisType,
+	invert: false
 }
 
 export type Options = typeof DEFAULT_OPTIONS;
-
+const MAIN_AXIS_STEP = 7;
 
 export function create(size: number[], options: Partial<Options>) {
+	let resolvedOptions = { ...DEFAULT_OPTIONS, ...options };
+	const CROSS_AXIS_STEP = (resolvedOptions.invert ? 4 : 3);
+	const invertY = (resolvedOptions.mainAxis == "vertical" ? -1 : 1);
+
 	let node = svg("svg");
 	let chordGroup = svg("g");
 	let noteGroup = svg("g");
 	node.append(chordGroup, noteGroup);
 
-	let resolvedOptions = { ...DEFAULT_OPTIONS, ...options };
-
 	let [mainSize, crossSize] = size;
-	const rowHeight = Math.sqrt(3)/2 * resolvedOptions.edge;
+	if (resolvedOptions.mainAxis == "vertical") { [mainSize, crossSize] = [crossSize, mainSize]; }
 
-	let rowsHalf = Math.ceil((crossSize/2) / rowHeight);
+	const stripeHeight = Math.sqrt(3)/2 * resolvedOptions.edge;
+	let stripesHalf = Math.ceil((crossSize/2) / stripeHeight);
 	let notesHalf = Math.ceil((mainSize/2) / resolvedOptions.edge);
 
-	for (let y of fromto(rowsHalf)) {
-		let isOddRow = Math.abs(y % 2);
-		let rowCenterNote = resolvedOptions.center - y * resolvedOptions.topRightStep;
-		rowCenterNote += Math.ceil(y/2) * resolvedOptions.mainStep;
+	for (let stripeIndex of fromto(stripesHalf)) {
+		let isOddRow = Math.abs(stripeIndex % 2);
+		let rowCenterNote = resolvedOptions.center - stripeIndex * CROSS_AXIS_STEP;
+		rowCenterNote += Math.ceil(stripeIndex/2) * MAIN_AXIS_STEP;
 
-		for (let x of fromto(notesHalf)) {
-			let note = rowCenterNote + x * resolvedOptions.mainStep;
+		for (let noteIndex of fromto(notesHalf)) {
+			let note = rowCenterNote + noteIndex * MAIN_AXIS_STEP;
 			if (note < midi.NOTE_MIN || note > midi.NOTE_MAX) { continue; }
 
-			let mainPosition = mainSize/2 + x*resolvedOptions.edge + isOddRow*resolvedOptions.edge/2;
-			let crossPosition = crossSize/2 + y*rowHeight;
+			let mainPosition = mainSize/2 + invertY*resolvedOptions.edge*(noteIndex + isOddRow/2);
+			let crossPosition = crossSize/2 + stripeIndex*stripeHeight;
 
 			[mainPosition, crossPosition] = [Math.round(mainPosition), Math.round(crossPosition)+0.5];
+			let translate = computeTranslate(mainPosition, crossPosition, resolvedOptions.mainAxis);
 
-			let noteDom = createNote(midi.noteNumberToLabel(note));
-			noteDom.node.setAttribute("transform", `translate(${mainPosition} ${crossPosition})`);
-			noteDom.dataset.notes = [note].join(",");
-			noteGroup.append(noteDom.node);
+			let noteNode = createNote(note);
+			noteNode.setAttribute("transform", translate);
+			noteGroup.append(noteNode);
 
-			if (x < notesHalf) {
-				let label = midi.noteNumberToLabel(note);
-
-				if (y > -rowsHalf) {
-					let chordUp = createChord(label.toLowerCase()); // fixme zalezi na topRightStep
-					chordUp.node.setAttribute("transform", `translate(${mainPosition} ${crossPosition})`);
-					chordUp.dataset.notes = [note, note+resolvedOptions.topRightStep, note+resolvedOptions.mainStep].join(",");
-					chordUp.path.setAttribute("d", `M 0 0 l ${resolvedOptions.edge/2} ${-rowHeight} l ${resolvedOptions.edge/2} ${rowHeight} Z`);
-					chordUp.text.setAttribute("x", `${resolvedOptions.edge/2}`);
-					chordUp.text.setAttribute("y", `${-rowHeight/3}`);
-					chordGroup.append(chordUp.node);
+			if (noteIndex < notesHalf) {
+				if (stripeIndex > -stripesHalf) { // up/left: minor on normal, major on inverted
+					let type: ChordType = (resolvedOptions.invert ? "minor" : "major");
+					let chordLeftOrUp = createChord(note, type, resolvedOptions);
+					chordLeftOrUp.setAttribute("transform", translate);
+					chordGroup.append(chordLeftOrUp);
 				}
 
-				if (y < rowsHalf) {
-					let chordDown = createChord(label.toUpperCase());
-					chordDown.node.setAttribute("transform", `translate(${mainPosition} ${crossPosition})`);
-					chordDown.dataset.notes = [note, note+resolvedOptions.mainStep-resolvedOptions.topRightStep, note+resolvedOptions.mainStep].join(",");
-					chordDown.path.setAttribute("d", `M 0 0 l ${resolvedOptions.edge/2} ${rowHeight} l ${resolvedOptions.edge/2} ${-rowHeight} Z`);
-					chordDown.text.setAttribute("x", `${resolvedOptions.edge/2}`);
-					chordDown.text.setAttribute("y", `${rowHeight/3}`);
-					chordGroup.append(chordDown.node);
+				if (stripeIndex < stripesHalf) { // down/right: major on normal, minor on inverted
+					let type: ChordType = (resolvedOptions.invert ? "major" : "minor");
+					let chordRightOrDown = createChord(note, type, resolvedOptions);
+					chordRightOrDown.setAttribute("transform", translate);
+					chordGroup.append(chordRightOrDown);
 				}
 			}
 		}
@@ -73,35 +70,66 @@ export function create(size: number[], options: Partial<Options>) {
 	return node;
 }
 
-function createNote(name: string) {
+function computeTranslate(mainPosition: number, crossPosition: number, mainAxis: MainAxisType) {
+	switch (mainAxis) {
+		case "horizontal": return `translate(${mainPosition} ${crossPosition})`; break;
+		case "vertical": return `translate(${crossPosition} ${mainPosition})`; break;
+	}
+}
+
+function createNote(note: number) {
 	let g = svg("g");
 	g.classList.add("note");
+	g.dataset.notes = [note].join(",");
 
 	let circle = svg("circle");
 	let text = svg("text");
-	text.textContent = name;
+	text.textContent = midi.noteNumberToLabel(note);
 
 	g.append(circle, text);
 
-	return { node: g, dataset: g.dataset, text };
+	return g;
 }
 
-function createChord(name: string) {
+function createChord(rootNote: number, type: ChordType, resolvedOptions: Options) {
+	const stripeHeight = Math.sqrt(3)/2 * resolvedOptions.edge;
+
 	let g = svg("g");
 	g.classList.add("chord");
 
 	let path = svg("path");
 	let text = svg("text");
-	text.textContent = name;
+	let label = midi.noteNumberToLabel(rootNote);
+	let midpointFactor = (resolvedOptions.invert ? -1 : 1);
+
+	switch (type) {
+		case "major":
+			midpointFactor *= 1;
+			text.textContent = label.toUpperCase();
+			g.dataset.notes = [rootNote, rootNote+4, rootNote+7].join(",");
+		break;
+		case "minor":
+			midpointFactor *= -1;
+			text.textContent = label.toLowerCase();
+			g.dataset.notes = [rootNote, rootNote+3, rootNote+7].join(",");
+		break;
+	}
+
+	switch (resolvedOptions.mainAxis) {
+		case "horizontal":
+			path.setAttribute("d", `M 0 0 h ${resolvedOptions.edge} l ${-resolvedOptions.edge/2} ${midpointFactor*stripeHeight} Z`);
+			text.setAttribute("x", `${resolvedOptions.edge/2}`);
+			text.setAttribute("y", `${midpointFactor*stripeHeight/3}`);
+		break;
+		case "vertical":
+			path.setAttribute("d", `M 0 0 v ${-resolvedOptions.edge} l ${midpointFactor*stripeHeight} ${resolvedOptions.edge/2} Z`);
+			text.setAttribute("x", `${midpointFactor*stripeHeight/3}`);
+			text.setAttribute("y", `${-resolvedOptions.edge/2}`);
+		break;
+	}
 
 	g.append(path, text);
-
-	return {
-		node: g,
-		dataset: g.dataset,
-		path,
-		text
-	}
+	return g;
 }
 
 function svg<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTagNameMap[K] {
