@@ -1,10 +1,16 @@
 import Synth from "./synth.ts";
 import * as midi from "./midi.ts";
 import * as tonnetz from "./layout/tonnetz.ts";
+import * as circle from "./layout/circle.ts";
+import { svg as svgNode } from "./svg.ts";
 
+
+
+type Options = ({type:"tonnetz"}&Partial<tonnetz.Options>) | ({type:"circle"}&Partial<circle.Options>);
 
 export default class MidiKeyboard extends HTMLElement {
 	protected outputs: MIDIOutput[] = [new Synth()];
+	protected svg = svgNode("svg");
 
 	// active notes, can be held multiple times
 	protected activeNotes = new Map<number, number>();
@@ -20,19 +26,30 @@ export default class MidiKeyboard extends HTMLElement {
 		shadowRoot.addEventListener("pointerdown", this);
 	}
 
+	configure(options: Options) {
+		const { svg, offsetWidth, offsetHeight } = this;
+
+		let size = [offsetWidth, offsetHeight];
+		this.setAttribute("layout", options.type);
+		switch (options.type) {
+			case "tonnetz": svg.replaceChildren(tonnetz.create(size, options)); break;
+			case "circle": svg.replaceChildren(circle.create(size, options)); break;
+		}
+
+	}
+
 	async connectedCallback() {
-		const { shadowRoot } = this;
+		const { shadowRoot, svg } = this;
 
 		let link = document.createElement("link");
 		link.rel = "stylesheet";
 		link.href = import.meta.resolve("./midi-keyboard.css");
-		shadowRoot.replaceChildren(link);
+		shadowRoot.replaceChildren(link, svg);
 		await linkLoaded(link);
 
-		let size = [this.offsetWidth, this.offsetHeight];
-		let layout = tonnetz.create(size, {});
-		this.setAttribute("layout", "tonnetz");
-		shadowRoot.append(layout);
+		this.configure({
+			type: "tonnetz"
+		})
 	}
 
 	handleEvent(e: PointerEvent) {

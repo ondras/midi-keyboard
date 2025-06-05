@@ -1,4 +1,5 @@
 import * as midi from "../midi.ts";
+import { svg } from "../svg.ts";
 
 
 type MainAxisType = "horizontal" | "vertical";
@@ -18,10 +19,10 @@ export function create(size: number[], options: Partial<Options>) {
 	const CROSS_AXIS_STEP = (resolvedOptions.invert ? 4 : 3);
 	const invertY = (resolvedOptions.mainAxis == "vertical" ? -1 : 1);
 
-	let node = svg("svg");
+	let fragment = document.createDocumentFragment();
 	let chordGroup = svg("g");
 	let noteGroup = svg("g");
-	node.append(chordGroup, noteGroup);
+	fragment.append(chordGroup, noteGroup);
 
 	let [mainSize, crossSize] = size;
 	if (resolvedOptions.mainAxis == "vertical") { [mainSize, crossSize] = [crossSize, mainSize]; }
@@ -43,31 +44,33 @@ export function create(size: number[], options: Partial<Options>) {
 			let crossPosition = crossSize/2 + stripeIndex*stripeHeight;
 
 			[mainPosition, crossPosition] = [Math.round(mainPosition), Math.round(crossPosition)+0.5];
-			let translate = computeTranslate(mainPosition, crossPosition, resolvedOptions.mainAxis);
 
 			let noteNode = createNote(note);
-			noteNode.setAttribute("transform", translate);
 			noteGroup.append(noteNode);
+			let nodes = [noteNode];
 
 			if (noteIndex < notesHalf) {
 				if (stripeIndex > -stripesHalf) { // up/left: minor on normal, major on inverted
 					let type: ChordType = (resolvedOptions.invert ? "minor" : "major");
 					let chordLeftOrUp = createChord(note, type, resolvedOptions);
-					chordLeftOrUp.setAttribute("transform", translate);
+					nodes.push(chordLeftOrUp);
 					chordGroup.append(chordLeftOrUp);
 				}
 
 				if (stripeIndex < stripesHalf) { // down/right: major on normal, minor on inverted
 					let type: ChordType = (resolvedOptions.invert ? "major" : "minor");
 					let chordRightOrDown = createChord(note, type, resolvedOptions);
-					chordRightOrDown.setAttribute("transform", translate);
+					nodes.push(chordRightOrDown);
 					chordGroup.append(chordRightOrDown);
 				}
 			}
+
+			let translate = computeTranslate(mainPosition, crossPosition, resolvedOptions.mainAxis);
+			nodes.forEach(node => node.setAttribute("transform", translate));
 		}
 	}
 
-	return node;
+	return fragment;
 }
 
 function computeTranslate(mainPosition: number, crossPosition: number, mainAxis: MainAxisType) {
@@ -130,10 +133,6 @@ function createChord(rootNote: number, type: ChordType, resolvedOptions: Options
 
 	g.append(path, text);
 	return g;
-}
-
-function svg<K extends keyof SVGElementTagNameMap>(name: K): SVGElementTagNameMap[K] {
-	return document.createElementNS("http://www.w3.org/2000/svg", name);
 }
 
 function* range(begin: number, end: number, step=1) {
