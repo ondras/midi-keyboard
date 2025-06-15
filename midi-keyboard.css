@@ -1,81 +1,78 @@
-:host {
-	display: block;
-	width: 100%;
-	height: 100%;
-	user-select: none;
-}
-
-:host([layout=tonnetz]) {
-	font-size: 18px;
-
-	svg {
+@layer base {
+	:host {
+		display: block;
 		width: 100%;
 		height: 100%;
-		display: block;
-	}
+		user-select: none;
+		font-size: 18px;
 
-	text {
-		text-anchor: middle;
-		dominant-baseline: central;
-	}
-
-	.note {
-		circle {
-			r: 20px;
-			stroke: #000;
-			fill: #fff;
+		svg {
+			width: 100%;
+			height: 100%;
+			display: block;
 		}
 
-		&:hover circle { fill: #eee; }
+		text {
+			text-anchor: middle;
+			dominant-baseline: central;
+		}
 	}
 
-	.chord {
-		path {
-			stroke: #000;
-			fill: #fff;
+	:host([layout=tonnetz]) {
+		.note {
+			circle {
+				r: 20px;
+				stroke: #000;
+				fill: #fff;
+			}
+
+			&:hover circle { fill: #eee; }
 		}
 
-		&:hover path { fill: #eee; }
+		.chord {
+			path {
+				stroke: #000;
+				fill: #fff;
+			}
+
+			&:hover path { fill: #eee; }
+		}
+
+		.active :is(path, circle) {
+			stroke-width: 2px;
+		}
 	}
 
-	.active :is(path, circle) {
-		stroke-width: 2px;
+	:host([layout=circle]) {
+		.note {
+			path {
+				stroke: #000;
+				fill: #fff;
+			}
+
+			&:hover path { fill: #eee; }
+		}
+
+		.chord {
+			path {
+				stroke: #000;
+				fill: #fff;
+			}
+
+			&:hover path { fill: #eee; }
+		}
+
+		.active :is(circle, path) {
+			stroke-width: 2px;
+		}
 	}
+
 }
 
-:host([layout=circle]) {
-	font-size: 18px;
-
-	svg {
-		width: 100%;
-		height: 100%;
-		display: block;
-	}
-
-	text {
-		text-anchor: middle;
-		dominant-baseline: central;
-	}
-
-	.note {
-		path {
-			stroke: #000;
-			fill: #fff;
+@layer custom {
+	:host {
+		[style*="--hue"] :is(path, circle) {
+			fill: hsl(calc(var(--hue) * 1deg), 100%, 80%);
 		}
-
-		&:hover path { fill: #eee; }
-	}
-
-	.chord {
-		path {
-			stroke: #000;
-			fill: #fff;
-		}
-
-		&:hover path { fill: #eee; }
-	}
-
-	.active :is(circle, path) {
-		stroke-width: 2px;
 	}
 }

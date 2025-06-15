@@ -46,6 +46,7 @@ export function create(size: number[], options: Partial<Options>) {
 			[mainPosition, crossPosition] = [Math.round(mainPosition), Math.round(crossPosition)+0.5];
 
 			let noteNode = createNote(note);
+			noteNode.style.setProperty("--hue", String(midi.noteToHue(note)));
 			noteGroup.append(noteNode);
 			let nodes = [noteNode];
 

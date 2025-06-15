@@ -32,6 +32,7 @@ export function create(size: number[], options: Partial<Options>) {
 		let note = resolvedOptions.center + i*resolvedOptions.step % 12;
 
 		let noteNode = createNote(note, radius);
+		noteNode.style.setProperty("--hue", String(midi.noteToHue(note)));
 		let chordMajor = createChord(note, "major", radius);
 		let chordMinor = createChord(note, "minor", radius);
 
@@ -74,13 +75,13 @@ function createChord(rootNote: number, type: ChordType, radius: number) {
 			xDirection = -1;
 			sweepFlag = 1;
 			text.textContent = "Maj";
-			g.dataset.notes = [rootNote, rootNote+4, rootNote+7].join(",");
+			g.dataset.notes = [rootNote, rootNote+4, rootNote+7].map(fit).join(",");
 		break;
 		case "minor":
 			xDirection = 1;
 			sweepFlag = 0;
 			text.textContent = "Min";
-			g.dataset.notes = [rootNote, rootNote+3, rootNote+7].join(",");
+			g.dataset.notes = [rootNote, rootNote+3, rootNote+7].map(fit).join(",");
 		break;
 	}
 
@@ -90,4 +91,8 @@ function createChord(rootNote: number, type: ChordType, radius: number) {
 
 	g.append(path, text);
 	return g;
+}
+
+function fit(note: number) {
+	return 60 + ((note - 60) % 12);
 }

@@ -13,3 +13,7 @@ export function noteNumberToFrequency(n: number) {
 export function noteNumberToLabel(n: number) {
 	return NAMES[(n+3) % NAMES.length];
 }
+
+export function noteToHue(n: number) {
+	return (n%12) * 360/12;
+}
