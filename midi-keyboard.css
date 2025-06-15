@@ -58,13 +58,12 @@
 	}
 
 	.note {
-		circle {
-			r: 20px;
+		path {
 			stroke: #000;
 			fill: #fff;
 		}
 
-		&:hover circle { fill: #eee; }
+		&:hover path { fill: #eee; }
 	}
 
 	.chord {
