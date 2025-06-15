@@ -26,6 +26,7 @@ export function create(size: number[], options: Partial<Options>) {
 		angle -= Math.PI/2; // start at the top
 		let cx = size[0]/2 + Math.cos(angle) * r;
 		let cy = size[1]/2 + Math.sin(angle) * r;
+		cx = Math.round(cx) + 0.5;
 		cy = Math.round(cy) + 0.5;
 
 		let note = resolvedOptions.center + i*resolvedOptions.step % 12;
