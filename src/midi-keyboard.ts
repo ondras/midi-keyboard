@@ -11,31 +11,40 @@ type Options = ({type:"tonnetz"}&Partial<tonnetz.Options>) | ({type:"circle"}&Pa
 export default class MidiKeyboard extends HTMLElement {
 	protected outputs: MIDIOutput[] = [new Synth()];
 	protected svg = svgNode("svg");
+	protected _options: Options;
 
 	// active notes, can be held multiple times
 	protected activeNotes = new Map<number, number>();
 
 	get shadowRoot() { return super.shadowRoot!; }
 	get layout() { return this.getAttribute("layout"); }
+	get options() { return this._options; }
 
 	constructor() {
 		super();
 		this.attachShadow({mode:"open"});
 
-		const { shadowRoot } = this;
+		const { shadowRoot, svg } = this;
 		shadowRoot.addEventListener("pointerdown", this);
+
+		let ro = new ResizeObserver(() => this.redraw());
+		ro.observe(svg)
 	}
 
-	configure(options: Options) {
-		const { svg, offsetWidth, offsetHeight } = this;
-
+	protected redraw() {
+		const { svg, offsetWidth, offsetHeight, options } = this;
 		let size = [offsetWidth, offsetHeight];
-		this.setAttribute("layout", options.type);
+
 		switch (options.type) {
 			case "tonnetz": svg.replaceChildren(tonnetz.create(size, options)); break;
 			case "circle": svg.replaceChildren(circle.create(size, options)); break;
 		}
+	}
 
+	configure(options: Options) {
+		this._options = options;
+		this.setAttribute("layout", options.type);
+		this.redraw();
 	}
 
 	async connectedCallback() {

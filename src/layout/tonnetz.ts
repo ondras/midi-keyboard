@@ -7,15 +7,18 @@ type ChordType = "major" | "minor";
 export const DEFAULT_OPTIONS = {
 	center: 60,
 	edge: 100,
-	mainAxis: "horizontal" as MainAxisType,
-	invert: false
+	mainAxis: "vertical" as MainAxisType,
+	invert: false,
+	wrap: false
 }
 
 export type Options = typeof DEFAULT_OPTIONS;
+type Wrap = (n: number) => number;
 const MAIN_AXIS_STEP = 7;
 
 export function create(size: number[], options: Partial<Options>) {
 	let resolvedOptions = { ...DEFAULT_OPTIONS, ...options };
+	function w(note: number) { return resolvedOptions.wrap ? wrap(note, resolvedOptions.center) : note; }
 	const CROSS_AXIS_STEP = (resolvedOptions.invert ? 4 : 3);
 	const invertY = (resolvedOptions.mainAxis == "vertical" ? -1 : 1);
 
@@ -37,7 +40,7 @@ export function create(size: number[], options: Partial<Options>) {
 		rowCenterNote += Math.ceil(stripeIndex/2) * MAIN_AXIS_STEP;
 
 		for (let noteIndex of fromto(notesHalf)) {
-			let note = rowCenterNote + noteIndex * MAIN_AXIS_STEP;
+			let note = w(rowCenterNote + noteIndex * MAIN_AXIS_STEP);
 			if (note < midi.NOTE_MIN || note > midi.NOTE_MAX) { continue; }
 
 			let mainPosition = mainSize/2 + invertY*resolvedOptions.edge*(noteIndex + isOddRow/2);
@@ -53,14 +56,14 @@ export function create(size: number[], options: Partial<Options>) {
 			if (noteIndex < notesHalf) {
 				if (stripeIndex > -stripesHalf) { // up/left: minor on normal, major on inverted
 					let type: ChordType = (resolvedOptions.invert ? "minor" : "major");
-					let chordLeftOrUp = createChord(note, type, resolvedOptions);
+					let chordLeftOrUp = createChord(note, type, resolvedOptions, w);
 					nodes.push(chordLeftOrUp);
 					chordGroup.append(chordLeftOrUp);
 				}
 
 				if (stripeIndex < stripesHalf) { // down/right: major on normal, minor on inverted
 					let type: ChordType = (resolvedOptions.invert ? "major" : "minor");
-					let chordRightOrDown = createChord(note, type, resolvedOptions);
+					let chordRightOrDown = createChord(note, type, resolvedOptions, w);
 					nodes.push(chordRightOrDown);
 					chordGroup.append(chordRightOrDown);
 				}
@@ -95,7 +98,7 @@ function createNote(note: number) {
 	return g;
 }
 
-function createChord(rootNote: number, type: ChordType, resolvedOptions: Options) {
+function createChord(rootNote: number, type: ChordType, resolvedOptions: Options, wrap: Wrap) {
 	const { edge } = resolvedOptions;
 	const stripeHeight = Math.sqrt(3)/2 * edge;
 
@@ -111,12 +114,12 @@ function createChord(rootNote: number, type: ChordType, resolvedOptions: Options
 		case "major":
 			midpointFactor *= 1;
 			text.textContent = label.toUpperCase();
-			g.dataset.notes = [rootNote, rootNote+4, rootNote+7].join(",");
+			g.dataset.notes = [rootNote, rootNote+4, rootNote+7].map(wrap).join(",");
 		break;
 		case "minor":
 			midpointFactor *= -1;
 			text.textContent = label.toLowerCase();
-			g.dataset.notes = [rootNote, rootNote+3, rootNote+7].join(",");
+			g.dataset.notes = [rootNote, rootNote+3, rootNote+7].map(wrap).join(",");
 		break;
 	}
 
@@ -142,3 +145,9 @@ function* range(begin: number, end: number, step=1) {
 }
 
 function fromto(amount: number) { return range(-amount, amount+1); }
+
+function wrap(note: number, center: number) {
+	let dist = (note - center) % 12;
+	if (dist < 0) { dist += 12; }
+	return center + dist;
+}

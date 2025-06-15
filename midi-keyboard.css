@@ -19,14 +19,14 @@
 	}
 
 	:host([layout=tonnetz]) {
+		.note, .chord { cursor: pointer; }
+
 		.note {
 			circle {
 				r: 20px;
 				stroke: #000;
 				fill: #fff;
 			}
-
-			&:hover circle { fill: #eee; }
 		}
 
 		.chord {
@@ -34,23 +34,22 @@
 				stroke: #000;
 				fill: #fff;
 			}
-
-			&:hover path { fill: #eee; }
 		}
 
-		.active :is(path, circle) {
-			stroke-width: 2px;
+		.active {
+			font-weight: bold;
+			path, circle { stroke-width: 2px; }
 		}
 	}
 
 	:host([layout=circle]) {
+		.note, .chord { cursor: pointer; }
+
 		.note {
 			path {
 				stroke: #000;
 				fill: #fff;
 			}
-
-			&:hover path { fill: #eee; }
 		}
 
 		.chord {
@@ -58,15 +57,13 @@
 				stroke: #000;
 				fill: #fff;
 			}
-
-			&:hover path { fill: #eee; }
 		}
 
-		.active :is(circle, path) {
-			stroke-width: 2px;
+		.active {
+			font-weight: bold;
+			path, circle { stroke-width: 2px; }
 		}
 	}
-
 }
 
 @layer custom {
