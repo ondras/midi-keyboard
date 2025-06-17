@@ -4,8 +4,10 @@ import * as tonnetz from "./layout/tonnetz.ts";
 import * as circle from "./layout/circle.ts";
 import { svg as svgNode } from "./svg.ts";
 
+import "./midi-keyboard-config.ts";
 
-type Options = ({type:"tonnetz"}&Partial<tonnetz.Options>) | ({type:"circle"}&Partial<circle.Options>);
+
+export type Options = ({type:"tonnetz"}&Partial<tonnetz.Options>) | ({type:"circle"}&Partial<circle.Options>);
 
 export default class MidiKeyboard extends HTMLElement {
 	protected outputs: MIDIOutput[] = [new Synth()];
@@ -50,6 +52,7 @@ export default class MidiKeyboard extends HTMLElement {
 	configure(options: Options) {
 		this._options = options;
 		this.setAttribute("layout", options.type);
+		this.dispatchEvent(new Event("change"));
 		this.redraw();
 	}
 

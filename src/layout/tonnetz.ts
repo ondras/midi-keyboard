@@ -4,7 +4,7 @@ import { svg } from "../svg.ts";
 
 type MainAxisType = "horizontal" | "vertical";
 type ChordType = "major" | "minor";
-export const DEFAULT_OPTIONS = {
+const DEFAULT_OPTIONS = {
 	center: 60,
 	edge: 100,
 	mainAxis: "vertical" as MainAxisType,
@@ -12,12 +12,16 @@ export const DEFAULT_OPTIONS = {
 	wrap: false
 }
 
+export function resolveOptions(options: Partial<Options>) {
+	return { ...DEFAULT_OPTIONS, ...options };
+}
+
 export type Options = typeof DEFAULT_OPTIONS;
 type Wrap = (n: number) => number;
 const MAIN_AXIS_STEP = 7;
 
 export function create(size: number[], options: Partial<Options>) {
-	let resolvedOptions = { ...DEFAULT_OPTIONS, ...options };
+	const resolvedOptions = resolveOptions(options);
 	function w(note: number) { return resolvedOptions.wrap ? wrap(note, resolvedOptions.center) : note; }
 	const CROSS_AXIS_STEP = (resolvedOptions.invert ? 4 : 3);
 	const invertY = (resolvedOptions.mainAxis == "vertical" ? -1 : 1);

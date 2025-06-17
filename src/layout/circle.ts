@@ -3,7 +3,7 @@ import * as midi from "../midi.ts";
 
 
 const NOTES = 12;
-export const DEFAULT_OPTIONS = {
+const DEFAULT_OPTIONS = {
 	center: 60,
 	step: 1
 }
@@ -12,15 +12,19 @@ export type Options = typeof DEFAULT_OPTIONS;
 type ChordType = "major" | "minor";
 type Wrap = (n: number) => number;
 
+export function resolveOptions(options: Partial<Options>) {
+	return { ...DEFAULT_OPTIONS, ...options };
+}
+
 export function create(size: number[], options: Partial<Options>) {
-	const resolvedOptions = { ...DEFAULT_OPTIONS, ...options };
+	const resolvedOptions = resolveOptions(options);
 	function w(n: number) { return wrap(n, resolvedOptions.center); }
 
 	let fragment = document.createDocumentFragment();
 
 	let minSize = Math.min(...size);
-	let r = (minSize/2) * 3/4;
-	let radius = minSize * 0.08;
+	let r = (minSize/2) * 0.78;
+	let radius = minSize * 0.1;
 
 	for (let i=0;i<NOTES;i++) {
 		let angle = (i * Math.PI * 2) / NOTES - Math.PI/2; // start at the top
