@@ -123,7 +123,8 @@ export default class MidiKeyboardConfig extends HTMLElement {
 					center: 12*(Number(form.elements["octave"].value)+2) + Number(form.elements["root"].value),
 					wrap: form.elements["wrap"].checked,
 					invert: form.elements["invert"].checked,
-					mainAxis: form.elements["direction"].value
+					mainAxis: form.elements["direction"].value,
+					edge: form.elements["edge"].valueAsNumber
 				}
 			break;
 		}
