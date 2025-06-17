@@ -5,7 +5,6 @@ import * as circle from "./layout/circle.ts";
 import { svg as svgNode } from "./svg.ts";
 
 
-
 type Options = ({type:"tonnetz"}&Partial<tonnetz.Options>) | ({type:"circle"}&Partial<circle.Options>);
 
 export default class MidiKeyboard extends HTMLElement {
@@ -28,11 +27,18 @@ export default class MidiKeyboard extends HTMLElement {
 		shadowRoot.addEventListener("pointerdown", this);
 
 		let ro = new ResizeObserver(() => this.redraw());
-		ro.observe(svg)
+		ro.observe(svg);
+
+		midi.requestAccess().then(midiAccess => {
+			let outputs = [...midiAccess.outputs.values()];
+			this.outputs.push(...outputs);
+		});
 	}
 
 	protected redraw() {
 		const { svg, offsetWidth, offsetHeight, options } = this;
+		if (!options) { return; }
+
 		let size = [offsetWidth, offsetHeight];
 
 		switch (options.type) {

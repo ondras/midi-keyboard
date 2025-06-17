@@ -17,3 +17,8 @@ export function noteNumberToLabel(n: number) {
 export function noteToHue(n: number) {
 	return (n%12) * 360/12;
 }
+
+export async function requestAccess() {
+	return navigator.requestMIDIAccess();
+}
+
