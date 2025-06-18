@@ -9,7 +9,7 @@ const DEFAULT_OPTIONS = {
 	edge: 100,
 	mainAxis: "vertical" as MainAxisType,
 	invert: false,
-	wrap: false
+	wrap: true
 }
 
 export function resolveOptions(options: Partial<Options>) {
