@@ -66,8 +66,8 @@ export default class MidiKeyboard extends HTMLElement {
 		await linkLoaded(link);
 
 		this.configure({
-//			type: "tonnetz"
-			type: "circle"
+			type: "tonnetz"
+//			type: "circle"
 		})
 	}
 

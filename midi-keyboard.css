@@ -25,14 +25,14 @@
 			circle {
 				r: 20px;
 				stroke: #000;
-				fill: #fff;
+				fill: transparent;
 			}
 		}
 
 		.chord {
 			path {
 				stroke: #000;
-				fill: #fff;
+				fill: transparent;
 			}
 		}
 
@@ -48,14 +48,14 @@
 		.note {
 			path {
 				stroke: #000;
-				fill: #fff;
+				fill: transparent;
 			}
 		}
 
 		.chord {
 			path {
 				stroke: #000;
-				fill: #fff;
+				fill: transparent;
 			}
 		}
 

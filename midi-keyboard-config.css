@@ -13,6 +13,10 @@
 	translate: calc(-100% + var(--ear-size)) calc(-100% + var(--ear-size));
 }
 
+:host(:not([hidden])) {
+	box-shadow: 0 0 5px 0 #888;
+}
+
 [name=ear] {
 	aspect-ratio: 1;
 	width: var(--ear-size);

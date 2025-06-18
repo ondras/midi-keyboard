@@ -31,7 +31,6 @@ export function create(size: number[], options: Partial<Options>) {
 		let cx = size[0]/2 + Math.cos(angle) * r;
 		let cy = size[1]/2 + Math.sin(angle) * r;
 		cx = Math.round(cx) + 0.5;
-		cy = Math.round(cy) + 0.5;
 
 		let note = w(resolvedOptions.center + i*resolvedOptions.step);
 		let nodes = [
@@ -54,7 +53,10 @@ function createNote(note: number, radius: number) {
 	g.style.setProperty("--hue", String(midi.noteToHue(note)));
 
 	let path = svg("path");
-	path.setAttribute("d", `M ${-radius} 0 h ${2*radius} a ${radius} ${radius} 0 1 0 ${-2*radius} 0`);
+	let a = Math.PI/6;
+	let dx = Math.cos(a)*radius;
+	let dy = Math.sin(a)*radius;
+	path.setAttribute("d", `M 0 0 L ${-dx} ${-dy} A ${radius} ${radius} 0 0 1 ${dx} ${-dy} Z`);
 	let text = svg("text");
 	text.setAttribute("y", `${-radius/2}`)
 	text.textContent = midi.noteNumberToLabel(note).toUpperCase();
@@ -71,6 +73,9 @@ function createChord(rootNote: number, type: ChordType, radius: number, wrap: Wr
 	let text = svg("text");
 	let xDirection = 0;
 	let sweepFlag = 1;
+	let a = Math.PI/6;
+	let dx = Math.cos(a)*radius;
+	let dy = Math.sin(a)*radius;
 
 	switch (type) {
 		case "major":
@@ -87,9 +92,9 @@ function createChord(rootNote: number, type: ChordType, radius: number, wrap: Wr
 		break;
 	}
 
-	path.setAttribute("d", `M 0 0 v ${radius} a ${radius} ${radius} 0 0 ${sweepFlag} ${radius*xDirection} ${-radius} z`);
-	text.setAttribute("x", `${radius*xDirection/2.5}`);
-	text.setAttribute("y", `${radius/2.5}`);
+	path.setAttribute("d", `M 0 0 v ${radius} A ${radius} ${radius} 0 0 ${sweepFlag} ${dx*xDirection} ${-dy} z`);
+	text.setAttribute("x", `${radius*xDirection/2}`);
+	text.setAttribute("y", `${radius/3}`);
 
 	g.append(path, text);
 	return g;
